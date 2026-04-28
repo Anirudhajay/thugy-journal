@@ -6,6 +6,7 @@
 <title>Thugy's Journal</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #030407;
@@ -538,6 +539,200 @@
   .loading-bar { width: 200px; height: 2px; background: var(--border2); border-radius: 2px; overflow: hidden; }
   .loading-bar-inner { height: 100%; width: 0; background: var(--lime); box-shadow: 0 0 10px var(--lime); animation: loadBar 1.2s ease forwards; }
   @keyframes loadBar { to { width: 100%; } }
+
+  /* ── EQUITY LAB ──────────────────────────────────────────── */
+  .eq-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 32px; }
+
+  .balance-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-top: 8px;
+  }
+
+  .balance-currency {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--lime);
+    text-shadow: 0 0 15px var(--lime-glow);
+    line-height: 1;
+  }
+
+  .balance-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border2);
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--lime);
+    text-shadow: 0 0 15px var(--lime-glow);
+    width: 100%;
+    outline: none;
+    padding: 0 0 2px 0;
+    line-height: 1;
+    transition: border-color 0.2s;
+  }
+
+  .balance-input:focus { border-bottom-color: var(--lime); }
+  .balance-input::-webkit-inner-spin-button,
+  .balance-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .balance-input { -moz-appearance: textfield; }
+
+  .chart-container { position: relative; width: 100%; }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .heatmap-wrap { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; }
+
+  .heatmap-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .heatmap-label {
+    height: 14px;
+    font-size: 9px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    letter-spacing: 1px;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-template-rows: repeat(7, 14px);
+    grid-auto-flow: column;
+    gap: 3px;
+  }
+
+  .heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    cursor: default;
+    transition: transform 0.1s, box-shadow 0.1s;
+    position: relative;
+  }
+
+  .heatmap-cell:hover { transform: scale(1.4); z-index: 2; box-shadow: 0 0 8px rgba(204,255,0,0.3); }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .heatmap-legend-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+
+  .day-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .day-row:last-child { border-bottom: none; }
+
+  .day-name {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    width: 36px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+
+  .day-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .day-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    min-width: 2px;
+  }
+
+  .day-value {
+    font-size: 12px;
+    font-weight: 600;
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .day-count {
+    font-size: 10px;
+    color: var(--muted);
+    width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+
+  .metric-item { padding: 8px 0; }
+
+  .metric-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .csv-btn {
+    padding: 6px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+  }
+
+  .csv-btn:hover { border-color: var(--lime); color: var(--lime); box-shadow: 0 0 10px var(--lime-glow); }
+
+  .streak-win { color: var(--lime); text-shadow: 0 0 15px var(--lime-glow); }
+  .streak-loss { color: var(--coral); text-shadow: 0 0 15px var(--coral-glow); }
+
+  @media (max-width: 1200px) {
+    .eq-stats-row { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -574,6 +769,7 @@
     </div>
     <div class="nav">
       <div class="nav-item active" onclick="navigate('dashboard')"><span class="nav-icon">◈</span> Dashboard</div>
+      <div class="nav-item" onclick="navigate('equity')"><span class="nav-icon">◆</span> Equity Lab</div>
       <div class="nav-item" onclick="navigate('log')"><span class="nav-icon">＋</span> Execute Log</div>
       <div class="nav-item" onclick="navigate('history')"><span class="nav-icon">≡</span> Ledger</div>
       <div class="nav-item" onclick="navigate('journal')"><span class="nav-icon">✎</span> Data Dump</div>
@@ -629,13 +825,9 @@
       <div class="dash-grid">
         <div>
           <div class="panel">
-            <div class="panel-header"><div class="panel-title">System Architecture Notes</div></div>
-            <div style="color:var(--muted);line-height:1.8;">
-              <p>> All trade data is stored securely in your personal account.</p>
-              <p>> Data persists across devices and sessions.</p>
-              <p>> Log executions to populate your equity stats.</p>
-              <br>
-              <p style="color:var(--lime);">[SYSTEM STATUS: OPTIMAL]</p>
+            <div class="panel-header"><div class="panel-title">Equity Overview</div></div>
+            <div class="chart-container" style="height:220px;">
+              <canvas id="miniEquityChart"></canvas>
             </div>
           </div>
         </div>
@@ -647,6 +839,87 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- EQUITY LAB -->
+    <div class="page" id="page-equity">
+      <div class="eq-stats-row">
+        <div class="stat-card lime">
+          <div class="stat-label">Starting Capital</div>
+          <div class="balance-input-wrap">
+            <span class="balance-currency">$</span>
+            <input type="number" id="starting-balance" class="balance-input" placeholder="10000" step="0.01">
+          </div>
+          <div class="stat-sub" style="margin-top:10px;font-size:9px;letter-spacing:1px;">Auto-saves on change</div>
+        </div>
+        <div class="stat-card lime">
+          <div class="stat-label">Current Balance</div>
+          <div class="stat-value lime" id="eq-current">$0.00</div>
+          <div class="stat-sub" id="eq-current-sub">—</div>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-label">Total Return</div>
+          <div class="stat-value cyan" id="eq-return">0.00%</div>
+          <div class="stat-sub" id="eq-return-sub">—</div>
+        </div>
+        <div class="stat-card coral">
+          <div class="stat-label">Max Drawdown</div>
+          <div class="stat-value coral" id="eq-maxdd">0.00%</div>
+          <div class="stat-sub" id="eq-maxdd-sub">—</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Profit Factor</div>
+          <div class="stat-value gold" id="eq-pf">0.00</div>
+          <div class="stat-sub" id="eq-pf-sub">—</div>
+        </div>
+        <div class="stat-card lime">
+          <div class="stat-label">Current Streak</div>
+          <div class="stat-value" id="eq-streak">—</div>
+          <div class="stat-sub" id="eq-streak-sub">—</div>
+        </div>
+      </div>
+
+      <!-- Equity Curve -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Equity Curve</div></div>
+        <div class="chart-container" style="height:300px;">
+          <canvas id="equityCurveChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Daily P&L + Setup Performance -->
+      <div class="charts-grid">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Daily P&amp;L</div></div>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="dailyPnlChart"></canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Setup Performance</div></div>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="setupChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Heatmap + Day of Week -->
+      <div class="charts-grid">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Trading Calendar (90d)</div></div>
+          <div id="heatmapContainer"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">P&amp;L by Day of Week</div></div>
+          <div id="dayOfWeekContainer"></div>
+        </div>
+      </div>
+
+      <!-- Advanced Metrics -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Advanced Analytics</div></div>
+        <div class="metrics-grid" id="metricsGrid"></div>
       </div>
     </div>
 
@@ -741,7 +1014,10 @@
     <!-- LEDGER -->
     <div class="page" id="page-history">
       <div class="panel">
-        <div class="panel-header"><div class="panel-title">Execution Ledger</div></div>
+        <div class="panel-header">
+          <div class="panel-title">Execution Ledger</div>
+          <button class="csv-btn" onclick="exportCSV()">Export CSV</button>
+        </div>
         <div style="overflow-x:auto;">
           <table>
             <thead>
@@ -752,12 +1028,13 @@
                 <th>Setup</th>
                 <th>Size</th>
                 <th>Net Result</th>
-                <th style="width:60px;"></th>
+                <th>Balance</th>
+                <th style="width:80px;"></th>
               </tr>
             </thead>
             <tbody id="ledgerBody">
               <tr id="ledger-empty-row">
-                <td colspan="7" style="text-align:center;color:var(--muted);letter-spacing:2px;font-size:11px;padding:32px 0;">NO EXECUTIONS LOGGED</td>
+                <td colspan="8" style="text-align:center;color:var(--muted);letter-spacing:2px;font-size:11px;padding:32px 0;">NO EXECUTIONS LOGGED</td>
               </tr>
             </tbody>
           </table>
@@ -792,7 +1069,7 @@
 <!-- Edit Modal -->
 <div class="modal-overlay" id="editModal">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <button class="modal-close" onclick="closeEditModal()">&#10005;</button>
     <div class="modal-title">EDIT EXECUTION</div>
     <input type="hidden" id="edit-id">
     <div class="form-grid">
@@ -844,9 +1121,23 @@
   </div>
 </div>
 
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box" style="width:400px;text-align:center;">
+    <div class="modal-title" style="color:var(--coral);">CONFIRM DELETE</div>
+    <p style="color:var(--muted);margin-bottom:8px;font-size:12px;letter-spacing:1px;">This execution will be permanently removed.</p>
+    <p style="color:var(--text);margin-bottom:28px;font-size:14px;" id="delete-info"></p>
+    <input type="hidden" id="delete-id">
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn" style="background:var(--coral);color:#fff;box-shadow:0 0 15px var(--coral-glow);" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
-//  CONFIG — Replace these with your Supabase project values
+//  CONFIG
 // ═══════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://vxfnchgtreitmyxvviiz.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Zm5jaGd0cmVpdG15eHZ2aWl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjgxODYsImV4cCI6MjA5MjcwNDE4Nn0.q_UgAcM39h7mNv-bZlQoL0SGfkV8K6iRFp1s2is97Rc';
@@ -856,6 +1147,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let trades = [];
 let currentUser = null;
 let currentTab  = 'login';
+
+// Chart instances
+let equityCurveChart = null;
+let dailyPnlChart = null;
+let setupChartInstance = null;
+let miniEquityChart = null;
+
+// ── Chart.js Global Config ───────────────────────────────────
+Chart.defaults.color = '#5c6280';
+Chart.defaults.borderColor = '#1a1e30';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 11;
 
 // ── BOOT ─────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
@@ -930,10 +1233,27 @@ async function bootApp(user) {
   document.getElementById('app').style.display = 'block';
   document.getElementById('user-email-display').innerText = user.email;
   document.querySelectorAll('input[type="date"]').forEach(el => el.valueAsDate = new Date());
+
+  const savedBal = localStorage.getItem('equity_bal_' + user.id);
+  if (savedBal) document.getElementById('starting-balance').value = savedBal;
+
   updateClock();
   setInterval(updateClock, 1000);
   await loadTrades();
 }
+
+// ── BALANCE ───────────────────────────────────────────────────
+function getStartingBalance() {
+  const v = parseFloat(document.getElementById('starting-balance').value);
+  return isNaN(v) ? 0 : v;
+}
+
+document.getElementById('starting-balance').addEventListener('input', function() {
+  if (currentUser) {
+    localStorage.setItem('equity_bal_' + currentUser.id, this.value);
+    refreshAll();
+  }
+});
 
 // ── SUPABASE DATA ─────────────────────────────────────────────
 async function loadTrades() {
@@ -967,7 +1287,21 @@ async function saveTrade(trade) {
   return data;
 }
 
-async function deleteTrade(id) {
+function promptDeleteTrade(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('delete-id').value = id;
+  document.getElementById('delete-info').innerText = t.asset + ' | ' + (t.pnl >= 0 ? '+' : '') + '$' + Math.abs(t.pnl).toFixed(2);
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+}
+
+async function confirmDelete() {
+  const id = document.getElementById('delete-id').value;
+  closeDeleteModal();
   const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
   if (error) { console.error(error); return; }
   trades = trades.filter(t => t.id !== id);
@@ -1070,6 +1404,8 @@ function refreshAll() {
   recalcStats();
   refreshFeed();
   refreshLedger();
+  renderMiniEquity();
+  renderEquityPage();
 }
 
 function recalcStats() {
@@ -1116,10 +1452,23 @@ function refreshFeed() {
 function refreshLedger() {
   const tbody = document.getElementById('ledgerBody');
   if (!trades.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);letter-spacing:2px;font-size:11px;padding:32px 0;">NO EXECUTIONS LOGGED</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);letter-spacing:2px;font-size:11px;padding:32px 0;">NO EXECUTIONS LOGGED</td></tr>';
     return;
   }
-  tbody.innerHTML = [...trades].reverse().map(t => `
+
+  const startBal = getStartingBalance();
+  const sorted = [...trades].sort((a,b) => a.date.localeCompare(b.date) || (a.created_at||'').localeCompare(b.created_at||''));
+  const balMap = new Map();
+  let running = startBal;
+  sorted.forEach(t => {
+    running += t.pnl;
+    balMap.set(t.id, running);
+  });
+
+  tbody.innerHTML = [...trades].reverse().map(t => {
+    const bal = balMap.get(t.id);
+    const balStr = bal !== undefined ? '$' + bal.toFixed(2) : '—';
+    return `
     <tr>
       <td>${t.date}</td>
       <td class="symbol-tag">${t.asset}</td>
@@ -1127,8 +1476,462 @@ function refreshLedger() {
       <td>${t.setup||'—'}</td>
       <td>${t.size}</td>
       <td class="${t.pnl>=0?'badge-win':'badge-loss'}">${t.pnl>=0?'+':''}$${Math.abs(t.pnl).toFixed(2)}</td>
-      <td><button class="btn-edit" onclick="openEditModal('${t.id}')">EDIT</button><button class="btn-delete" onclick="deleteTrade('${t.id}')">DEL</button></td>
-    </tr>`).join('');
+      <td style="color:${bal >= startBal ? 'var(--lime)' : 'var(--coral)'};font-size:12px;">${balStr}</td>
+      <td><button class="btn-edit" onclick="openEditModal('${t.id}')">EDIT</button><button class="btn-delete" onclick="promptDeleteTrade('${t.id}')">DEL</button></td>
+    </tr>`}).join('');
+}
+
+// ── EQUITY LAB ────────────────────────────────────────────────
+function getEquityData() {
+  const startBal = getStartingBalance();
+  const sorted = [...trades].sort((a,b) => a.date.localeCompare(b.date));
+
+  const dailyPnl = {};
+  sorted.forEach(t => { dailyPnl[t.date] = (dailyPnl[t.date] || 0) + t.pnl; });
+
+  const dates = Object.keys(dailyPnl).sort();
+  let running = startBal;
+  const balances = [startBal];
+  const labels = ['Start'];
+
+  dates.forEach(d => {
+    running += dailyPnl[d];
+    balances.push(running);
+    labels.push(d);
+  });
+
+  return { labels, balances, dailyData: dates.map(d => ({ date: d, pnl: dailyPnl[d] })) };
+}
+
+function calcAdvancedMetrics() {
+  if (!trades.length) return null;
+
+  const wins = trades.filter(t => t.pnl > 0);
+  const losses = trades.filter(t => t.pnl < 0);
+  const grossProfit = wins.reduce((s,t) => s + t.pnl, 0);
+  const grossLoss = Math.abs(losses.reduce((s,t) => s + t.pnl, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+
+  const avgWin = wins.length ? grossProfit / wins.length : 0;
+  const avgLoss = losses.length ? grossLoss / losses.length : 0;
+  const largestWin = wins.length ? Math.max(...wins.map(t => t.pnl)) : 0;
+  const largestLoss = losses.length ? Math.min(...losses.map(t => t.pnl)) : 0;
+
+  const sorted = [...trades].sort((a,b) => a.date.localeCompare(b.date));
+  let maxConsWins = 0, maxConsLosses = 0, cw = 0, cl = 0;
+  sorted.forEach(t => {
+    if (t.pnl > 0) { cw++; cl = 0; maxConsWins = Math.max(maxConsWins, cw); }
+    else if (t.pnl < 0) { cl++; cw = 0; maxConsLosses = Math.max(maxConsLosses, cl); }
+    else { cw = 0; cl = 0; }
+  });
+
+  let currentStreak = 0, streakType = '';
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const dir = sorted[i].pnl >= 0 ? 'W' : 'L';
+    if (!streakType) { streakType = dir; currentStreak = 1; }
+    else if (dir === streakType) currentStreak++;
+    else break;
+  }
+
+  const startBal = getStartingBalance();
+  let peak = startBal, maxDD = 0, maxDDval = 0, runPnl = 0;
+  sorted.forEach(t => {
+    runPnl += t.pnl;
+    const bal = startBal + runPnl;
+    peak = Math.max(peak, bal);
+    const dd = peak > 0 ? (peak - bal) / peak * 100 : 0;
+    if (dd > maxDD) { maxDD = dd; maxDDval = peak - bal; }
+  });
+
+  const winRate = trades.length ? wins.length / trades.length : 0;
+  const expectancy = (winRate * avgWin) - ((1 - winRate) * avgLoss);
+  const tradingDays = new Set(trades.map(t => t.date)).size;
+  const payoffRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+  const totalPnl = trades.reduce((s,t) => s + t.pnl, 0);
+  const currentBal = startBal + totalPnl;
+  const totalReturn = startBal > 0 ? (totalPnl / startBal * 100) : 0;
+
+  return {
+    profitFactor, maxConsWins, maxConsLosses, currentStreak, streakType,
+    avgWin, avgLoss, maxDD, maxDDval, expectancy, largestWin, largestLoss,
+    tradingDays, grossProfit, grossLoss, payoffRatio, currentBal, totalReturn, totalPnl
+  };
+}
+
+function renderEquityPage() {
+  const m = calcAdvancedMetrics();
+  const startBal = getStartingBalance();
+  const fmt = v => (v>=0?'+':'-') + ' $' + Math.abs(v).toFixed(2);
+
+  if (!m) {
+    document.getElementById('eq-current').innerText = startBal > 0 ? '$' + startBal.toFixed(2) : '$0.00';
+    document.getElementById('eq-current-sub').innerText = 'No trades yet';
+    document.getElementById('eq-return').innerText = '0.00%';
+    document.getElementById('eq-return-sub').innerText = '—';
+    document.getElementById('eq-maxdd').innerText = '0.00%';
+    document.getElementById('eq-maxdd-sub').innerText = '—';
+    document.getElementById('eq-pf').innerText = '0.00';
+    document.getElementById('eq-pf-sub').innerText = '—';
+    document.getElementById('eq-streak').innerText = '—';
+    document.getElementById('eq-streak').className = 'stat-value';
+    document.getElementById('eq-streak-sub').innerText = '—';
+    document.getElementById('metricsGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:20px;font-size:11px;letter-spacing:2px;">LOG EXECUTIONS TO POPULATE ANALYTICS</div>';
+    renderHeatmap();
+    renderDayOfWeek();
+    return;
+  }
+
+  document.getElementById('eq-current').innerText = '$' + m.currentBal.toFixed(2);
+  document.getElementById('eq-current').className = 'stat-value ' + (m.currentBal >= startBal ? 'lime' : 'coral');
+  document.getElementById('eq-current-sub').innerText = fmt(m.totalPnl) + ' net';
+
+  document.getElementById('eq-return').innerText = (m.totalReturn >= 0 ? '+' : '') + m.totalReturn.toFixed(2) + '%';
+  document.getElementById('eq-return').className = 'stat-value ' + (m.totalReturn >= 0 ? 'cyan' : 'coral');
+  document.getElementById('eq-return-sub').innerText = trades.length + ' executions';
+
+  document.getElementById('eq-maxdd').innerText = m.maxDD.toFixed(2) + '%';
+  document.getElementById('eq-maxdd-sub').innerText = '- $' + m.maxDDval.toFixed(2) + ' from peak';
+
+  const pfDisplay = m.profitFactor === Infinity ? '∞' : m.profitFactor.toFixed(2);
+  document.getElementById('eq-pf').innerText = pfDisplay;
+  document.getElementById('eq-pf-sub').innerText = '$' + m.grossProfit.toFixed(0) + ' / $' + m.grossLoss.toFixed(0);
+
+  document.getElementById('eq-streak').innerText = m.currentStreak + m.streakType;
+  document.getElementById('eq-streak').className = 'stat-value ' + (m.streakType === 'W' ? 'streak-win' : 'streak-loss');
+  document.getElementById('eq-streak-sub').innerText = 'Best: ' + m.maxConsWins + 'W / ' + m.maxConsLosses + 'L';
+
+  const metricsData = [
+    { label: 'Gross Profit', value: '+ $' + m.grossProfit.toFixed(2), color: 'var(--lime)' },
+    { label: 'Gross Loss', value: '- $' + m.grossLoss.toFixed(2), color: 'var(--coral)' },
+    { label: 'Avg Win', value: '+ $' + m.avgWin.toFixed(2), color: 'var(--lime)' },
+    { label: 'Avg Loss', value: '- $' + m.avgLoss.toFixed(2), color: 'var(--coral)' },
+    { label: 'Largest Win', value: '+ $' + m.largestWin.toFixed(2), color: 'var(--lime)' },
+    { label: 'Largest Loss', value: fmt(m.largestLoss), color: 'var(--coral)' },
+    { label: 'Payoff Ratio', value: m.payoffRatio.toFixed(2) + 'R', color: 'var(--gold)' },
+    { label: 'Expectancy', value: (m.expectancy >= 0 ? '+' : '') + '$' + m.expectancy.toFixed(2), color: m.expectancy >= 0 ? 'var(--lime)' : 'var(--coral)' },
+    { label: 'Max Win Streak', value: m.maxConsWins.toString(), color: 'var(--lime)' },
+    { label: 'Max Loss Streak', value: m.maxConsLosses.toString(), color: 'var(--coral)' },
+    { label: 'Trading Days', value: m.tradingDays.toString(), color: 'var(--cyan)' },
+    { label: 'Avg Trades/Day', value: (trades.length / Math.max(m.tradingDays, 1)).toFixed(1), color: 'var(--cyan)' },
+  ];
+
+  document.getElementById('metricsGrid').innerHTML = metricsData.map(d =>
+    `<div class="metric-item"><div class="metric-label">${d.label}</div><div class="metric-value" style="color:${d.color}">${d.value}</div></div>`
+  ).join('');
+
+  renderEquityCharts();
+  renderHeatmap();
+  renderDayOfWeek();
+}
+
+function renderEquityCharts() {
+  const eq = getEquityData();
+  const pageVisible = document.getElementById('page-equity').classList.contains('active');
+
+  // Equity Curve
+  if (equityCurveChart) equityCurveChart.destroy();
+  const eCtx = document.getElementById('equityCurveChart');
+  if (eCtx && pageVisible) {
+    const ctx = eCtx.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(204, 255, 0, 0.2)');
+    gradient.addColorStop(1, 'rgba(204, 255, 0, 0.0)');
+
+    equityCurveChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: eq.labels,
+        datasets: [{
+          data: eq.balances,
+          borderColor: '#ccff00',
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.35,
+          pointRadius: eq.balances.length > 30 ? 0 : 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#ccff00',
+          pointBorderColor: '#030407',
+          pointBorderWidth: 2,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0c14',
+            borderColor: '#282d46',
+            borderWidth: 1,
+            titleColor: '#f0f2f8',
+            bodyColor: '#ccff00',
+            padding: 12,
+            cornerRadius: 4,
+            callbacks: { label: c => '$' + c.parsed.y.toFixed(2) }
+          }
+        },
+        scales: {
+          x: { grid: { color: '#111421' }, ticks: { maxTicksLimit: 12, maxRotation: 0 } },
+          y: { grid: { color: '#111421' }, ticks: { callback: v => '$' + v.toLocaleString() } }
+        }
+      }
+    });
+  }
+
+  // Daily P&L
+  if (dailyPnlChart) dailyPnlChart.destroy();
+  const dCtx = document.getElementById('dailyPnlChart');
+  if (dCtx && pageVisible && eq.dailyData.length) {
+    dailyPnlChart = new Chart(dCtx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: eq.dailyData.map(d => d.date),
+        datasets: [{
+          data: eq.dailyData.map(d => d.pnl),
+          backgroundColor: eq.dailyData.map(d => d.pnl >= 0 ? 'rgba(204,255,0,0.7)' : 'rgba(255,42,77,0.7)'),
+          borderColor: eq.dailyData.map(d => d.pnl >= 0 ? '#ccff00' : '#ff2a4d'),
+          borderWidth: 1,
+          borderRadius: 2,
+          barPercentage: 0.7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0c14',
+            borderColor: '#282d46',
+            borderWidth: 1,
+            padding: 12,
+            callbacks: { label: c => (c.parsed.y >= 0 ? '+' : '') + '$' + c.parsed.y.toFixed(2) }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 10, maxRotation: 0 } },
+          y: { grid: { color: '#111421' }, ticks: { callback: v => '$' + v } }
+        }
+      }
+    });
+  }
+
+  // Setup Performance
+  if (setupChartInstance) setupChartInstance.destroy();
+  const sCtx = document.getElementById('setupChart');
+  if (sCtx && pageVisible && trades.length) {
+    const setupPnl = {};
+    trades.forEach(t => {
+      const s = t.setup || 'Manual';
+      setupPnl[s] = (setupPnl[s] || 0) + t.pnl;
+    });
+
+    const entries = Object.entries(setupPnl).sort((a,b) => b[1] - a[1]);
+    const labels = entries.map(e => e[0]);
+    const values = entries.map(e => e[1]);
+
+    setupChartInstance = new Chart(sCtx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: values.map(v => v >= 0 ? 'rgba(0,229,255,0.5)' : 'rgba(255,42,77,0.5)'),
+          borderColor: values.map(v => v >= 0 ? '#00e5ff' : '#ff2a4d'),
+          borderWidth: 1,
+          borderRadius: 2,
+          barPercentage: 0.6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0c14',
+            borderColor: '#282d46',
+            borderWidth: 1,
+            padding: 12,
+            callbacks: { label: c => (c.parsed.x >= 0 ? '+' : '') + '$' + c.parsed.x.toFixed(2) }
+          }
+        },
+        scales: {
+          x: { grid: { color: '#111421' }, ticks: { callback: v => '$' + v } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }
+}
+
+function renderMiniEquity() {
+  if (miniEquityChart) miniEquityChart.destroy();
+  const canvas = document.getElementById('miniEquityChart');
+  if (!canvas) return;
+
+  const eq = getEquityData();
+  if (eq.balances.length < 2) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#5c6280';
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('Set starting capital in Equity Lab to see your curve', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, 'rgba(204, 255, 0, 0.15)');
+  gradient.addColorStop(1, 'rgba(204, 255, 0, 0.0)');
+
+  miniEquityChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: eq.labels,
+      datasets: [{
+        data: eq.balances,
+        borderColor: '#ccff00',
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0a0c14',
+          borderColor: '#282d46',
+          borderWidth: 1,
+          padding: 10,
+          callbacks: { label: c => '$' + c.parsed.y.toFixed(2) }
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      }
+    }
+  });
+}
+
+function renderHeatmap() {
+  const container = document.getElementById('heatmapContainer');
+  if (!container) return;
+
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - 90);
+
+  const pnlByDate = {};
+  trades.forEach(t => { pnlByDate[t.date] = (pnlByDate[t.date] || 0) + t.pnl; });
+
+  const values = Object.values(pnlByDate);
+  const maxAbs = Math.max(...values.map(Math.abs), 1);
+
+  const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let labelsHtml = '<div class="heatmap-labels">';
+  dayLabels.forEach(d => { labelsHtml += '<div class="heatmap-label">' + d + '</div>'; });
+  labelsHtml += '</div>';
+
+  const cursor = new Date(start);
+  cursor.setDate(cursor.getDate() - cursor.getDay());
+
+  let gridHtml = '<div class="heatmap-grid">';
+  while (cursor <= today) {
+    const ds = cursor.toISOString().split('T')[0];
+    const pnl = pnlByDate[ds];
+    let bg;
+    if (pnl === undefined) {
+      bg = '#111421';
+    } else if (pnl >= 0) {
+      const intensity = Math.min(pnl / maxAbs, 1);
+      bg = 'rgba(204, 255, 0, ' + (0.12 + intensity * 0.68) + ')';
+    } else {
+      const intensity = Math.min(Math.abs(pnl) / maxAbs, 1);
+      bg = 'rgba(255, 42, 77, ' + (0.12 + intensity * 0.68) + ')';
+    }
+
+    const tooltip = pnl !== undefined ? ds + ': ' + (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2) : ds + ': No trades';
+    gridHtml += '<div class="heatmap-cell" style="background:' + bg + '" title="' + tooltip + '"></div>';
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  gridHtml += '</div>';
+
+  let legendHtml = '<div class="heatmap-legend">';
+  legendHtml += '<span>Loss</span>';
+  legendHtml += '<div class="heatmap-legend-cell" style="background:rgba(255,42,77,0.6)"></div>';
+  legendHtml += '<div class="heatmap-legend-cell" style="background:rgba(255,42,77,0.25)"></div>';
+  legendHtml += '<div class="heatmap-legend-cell" style="background:#111421"></div>';
+  legendHtml += '<div class="heatmap-legend-cell" style="background:rgba(204,255,0,0.25)"></div>';
+  legendHtml += '<div class="heatmap-legend-cell" style="background:rgba(204,255,0,0.6)"></div>';
+  legendHtml += '<span>Profit</span>';
+  legendHtml += '</div>';
+
+  container.innerHTML = '<div class="heatmap-wrap">' + labelsHtml + gridHtml + '</div>' + legendHtml;
+}
+
+function renderDayOfWeek() {
+  const container = document.getElementById('dayOfWeekContainer');
+  if (!container) return;
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayPnl = Array(7).fill(0);
+  const dayCount = Array(7).fill(0);
+
+  trades.forEach(t => {
+    const d = new Date(t.date + 'T12:00:00').getDay();
+    dayPnl[d] += t.pnl;
+    dayCount[d]++;
+  });
+
+  const maxAbs = Math.max(...dayPnl.map(Math.abs), 1);
+
+  container.innerHTML = dayNames.map((name, i) => {
+    const pnl = dayPnl[i];
+    const count = dayCount[i];
+    const width = count > 0 ? Math.max(Math.abs(pnl) / maxAbs * 100, 4) : 0;
+    const color = pnl >= 0 ? 'var(--lime)' : 'var(--coral)';
+    const valStr = count > 0 ? ((pnl >= 0 ? '+' : '-') + '$' + Math.abs(pnl).toFixed(0)) : '—';
+    return '<div class="day-row">' +
+      '<div class="day-name">' + name + '</div>' +
+      '<div class="day-bar-wrap"><div class="day-bar" style="width:' + width + '%;background:' + color + ';"></div></div>' +
+      '<div class="day-value" style="color:' + (count > 0 ? color : 'var(--muted)') + '">' + valStr + '</div>' +
+      '<div class="day-count">' + count + 't</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────────
+function exportCSV() {
+  if (!trades.length) return;
+  const headers = ['Date','Asset','Direction','Setup','Size','PnL','Notes','Emotions'];
+  const rows = [...trades].sort((a,b) => a.date.localeCompare(b.date)).map(t => [
+    t.date,
+    t.asset,
+    t.direction,
+    (t.setup || '').replace(/,/g, ';'),
+    t.size,
+    t.pnl,
+    (t.notes || '').replace(/,/g, ';').replace(/\n/g, ' '),
+    (t.emotions || '').replace(/,/g, ';')
+  ]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'thugy_trades_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // ── ROUTER ────────────────────────────────────────────────────
@@ -1138,8 +1941,15 @@ function navigate(pageId) {
   document.getElementById('page-'+pageId).classList.add('active');
   const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(el=>el.getAttribute('onclick').includes(pageId));
   if (activeNav) activeNav.classList.add('active');
-  const titles = { dashboard:'DASHBOARD', log:'EXECUTION ENTRY', history:'LEDGER', journal:'DATA DUMP' };
+  const titles = { dashboard:'DASHBOARD', equity:'EQUITY LAB', log:'EXECUTION ENTRY', history:'LEDGER', journal:'DATA DUMP' };
   document.getElementById('pageTitle').innerText = titles[pageId];
+
+  if (pageId === 'equity') {
+    setTimeout(() => { renderEquityCharts(); renderHeatmap(); renderDayOfWeek(); }, 60);
+  }
+  if (pageId === 'dashboard') {
+    setTimeout(renderMiniEquity, 60);
+  }
 }
 
 // ── CLOCK ─────────────────────────────────────────────────────
