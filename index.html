@@ -457,6 +457,57 @@
 
   .btn-delete:hover { background: rgba(255,42,77,0.3); border-color: var(--coral); box-shadow: 0 0 8px var(--coral-glow); }
 
+  .btn-edit {
+    padding: 4px 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,229,255,0.3);
+    background: rgba(0,229,255,0.08);
+    color: var(--cyan);
+    font-family: var(--font-data);
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-right: 4px;
+  }
+  .btn-edit:hover { background: rgba(0,229,255,0.2); border-color: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,0.2); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(3,4,7,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 36px;
+    width: 580px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 15px rgba(0,229,255,0.4);
+  }
+  .modal-title { font-family: var(--font-display); font-size: 24px; letter-spacing: 3px; color: var(--cyan); margin-bottom: 24px; }
+  .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .modal-close:hover { color: var(--coral); }
+
   .saving-indicator {
     font-size: 10px;
     letter-spacing: 2px;
@@ -735,6 +786,61 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <div class="modal-title">EDIT EXECUTION</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Ticker / Pair</label>
+        <input type="text" class="form-control" id="edit-asset" style="text-transform:uppercase">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vector</label>
+        <select class="form-control" id="edit-dir">
+          <option value="LONG">LONG (BUY)</option>
+          <option value="SHORT">SHORT (SELL)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Net P&amp;L ($)</label>
+        <input type="number" class="form-control" id="edit-pnl" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Size</label>
+        <input type="number" class="form-control" id="edit-size" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-control" id="edit-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Setup</label>
+        <select class="form-control" id="edit-setup">
+          <option value="">—</option>
+          <option>Liquidity Raid</option>
+          <option>Order Block Mitigation</option>
+          <option>VWAP Deviation</option>
+          <option>Mean Reversion</option>
+          <option>Breakout / Momentum</option>
+          <option>Macro Catalyst</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="edit-notes" style="min-height:100px;"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveEdit()" style="background:var(--cyan);color:#030407;box-shadow:0 0 15px rgba(0,229,255,0.3);">Save Changes</button>
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+      <div class="saving-indicator" id="edit-save-indicator"></div>
+    </div>
   </div>
 </div>
 
@@ -1021,7 +1127,7 @@ function refreshLedger() {
       <td>${t.setup||'—'}</td>
       <td>${t.size}</td>
       <td class="${t.pnl>=0?'badge-win':'badge-loss'}">${t.pnl>=0?'+':''}$${Math.abs(t.pnl).toFixed(2)}</td>
-      <td><button class="btn-delete" onclick="deleteTrade('${t.id}')">DEL</button></td>
+      <td><button class="btn-edit" onclick="openEditModal('${t.id}')">EDIT</button><button class="btn-delete" onclick="deleteTrade('${t.id}')">DEL</button></td>
     </tr>`).join('');
 }
 
@@ -1066,6 +1172,55 @@ function updateClock() {
     }
   });
 });
+
+// ── EDIT MODAL ────────────────────────────────────────────────
+function openEditModal(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('edit-id').value    = t.id;
+  document.getElementById('edit-asset').value = t.asset;
+  document.getElementById('edit-dir').value   = t.direction;
+  document.getElementById('edit-pnl').value   = t.pnl;
+  document.getElementById('edit-size').value  = t.size;
+  document.getElementById('edit-date').value  = t.date;
+  document.getElementById('edit-notes').value = t.notes || '';
+  const setupSel = document.getElementById('edit-setup');
+  setupSel.value = t.setup || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  document.getElementById('edit-save-indicator').className = 'saving-indicator';
+}
+
+async function saveEdit() {
+  const id    = document.getElementById('edit-id').value;
+  const asset = document.getElementById('edit-asset').value.trim().toUpperCase();
+  const dir   = document.getElementById('edit-dir').value;
+  const pnl   = parseFloat(document.getElementById('edit-pnl').value);
+  const size  = parseFloat(document.getElementById('edit-size').value) || 1;
+  const date  = document.getElementById('edit-date').value;
+  const setup = document.getElementById('edit-setup').value;
+  const notes = document.getElementById('edit-notes').value;
+  const ind   = document.getElementById('edit-save-indicator');
+
+  if (!asset || isNaN(pnl)) { ind.innerText = 'Fill in ticker + P&L.'; ind.className = 'saving-indicator show error'; return; }
+
+  ind.innerText = 'Saving...'; ind.className = 'saving-indicator show';
+
+  const { error } = await sb.from('trades').update({ asset, direction: dir, pnl, size, date, setup, notes })
+    .eq('id', id).eq('user_id', currentUser.id);
+
+  if (error) { ind.innerText = 'Error saving.'; ind.className = 'saving-indicator show error'; return; }
+
+  const idx = trades.findIndex(x => x.id === id);
+  if (idx !== -1) trades[idx] = { ...trades[idx], asset, direction: dir, pnl, size, date, setup, notes };
+
+  refreshAll();
+  ind.innerText = 'Saved ✓'; ind.className = 'saving-indicator show saved';
+  setTimeout(closeEditModal, 800);
+}
 
 // Enter key on auth inputs
 document.getElementById('auth-password').addEventListener('keydown', e => {
