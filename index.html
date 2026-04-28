@@ -508,6 +508,45 @@
   .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
   .modal-close:hover { color: var(--coral); }
 
+  /* ── EQUITY VAULT ───────────────────────────────────────── */
+  .vault-balance { font-family: var(--font-display); font-size: 52px; letter-spacing: 2px; line-height: 1; margin: 12px 0 6px; }
+  .vault-roi { font-size: 13px; letter-spacing: 2px; font-weight: 600; margin-bottom: 16px; }
+  .vault-bar-track { width: 100%; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; margin-bottom: 20px; }
+  .vault-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; min-width: 4px; }
+  .vault-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .vault-meta { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .vault-meta span { color: var(--text); font-weight: 600; }
+  .vault-input-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .vault-input { flex: 1; background: var(--surface2); border: 1px solid var(--border2); border-radius: 2px; padding: 10px 14px; color: var(--lime); font-family: var(--font-data); font-size: 14px; outline: none; }
+  .vault-input:focus { border-color: var(--lime); }
+  .vault-set-btn { padding: 10px 20px; background: var(--lime-glow); border: 1px solid rgba(204,255,0,0.3); border-radius: 2px; color: var(--lime); font-family: var(--font-data); font-size: 11px; letter-spacing: 2px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: all 0.2s; white-space: nowrap; }
+  .vault-set-btn:hover { background: rgba(204,255,0,0.25); }
+
+  /* ── STREAK ─────────────────────────────────────────────── */
+  .streak-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 3px; font-size: 13px; font-weight: 700; letter-spacing: 2px; }
+  .streak-badge.win { background: var(--lime-glow); border: 1px solid rgba(204,255,0,0.3); color: var(--lime); }
+  .streak-badge.loss { background: var(--coral-glow); border: 1px solid rgba(255,42,77,0.3); color: var(--coral); }
+  .streak-badge.none { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); }
+
+  /* ── SPARKLINE ───────────────────────────────────────────── */
+  .sparkline-wrap { display: flex; align-items: flex-end; gap: 4px; height: 64px; }
+  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 4px; transition: height 0.3s ease; cursor: default; }
+  .spark-bar.pos { background: var(--lime); opacity: 0.75; }
+  .spark-bar.pos:hover { opacity: 1; }
+  .spark-bar.neg { background: var(--coral); opacity: 0.75; }
+  .spark-bar.neg:hover { opacity: 1; }
+
+  /* ── TODAY PILL ─────────────────────────────────────────── */
+  .today-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 1px; padding: 6px 14px; border-radius: 20px; font-weight: 600; }
+  .today-pill.pos { background: var(--lime-glow); color: var(--lime); border: 1px solid rgba(204,255,0,0.2); }
+  .today-pill.neg { background: var(--coral-glow); color: var(--coral); border: 1px solid rgba(255,42,77,0.2); }
+  .today-pill.flat { background: var(--surface2); color: var(--muted); border: 1px solid var(--border2); }
+
+  /* ── RISK METER ─────────────────────────────────────────── */
+  .risk-bar-track { width: 100%; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .risk-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+  .risk-value { font-size: 12px; margin-top: 5px; font-weight: 600; letter-spacing: 1px; }
+
   .saving-indicator {
     font-size: 10px;
     letter-spacing: 2px;
@@ -598,6 +637,8 @@
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
+
+      <!-- TOP STAT CARDS -->
       <div class="stats-row">
         <div class="stat-card lime">
           <div class="stat-label">Net P&amp;L</div>
@@ -626,24 +667,88 @@
         </div>
       </div>
 
+      <!-- MAIN DASH GRID -->
       <div class="dash-grid">
         <div>
-          <div class="panel">
-            <div class="panel-header"><div class="panel-title">System Architecture Notes</div></div>
-            <div style="color:var(--muted);line-height:1.8;">
-              <p>> All trade data is stored securely in your personal account.</p>
-              <p>> Data persists across devices and sessions.</p>
-              <p>> Log executions to populate your equity stats.</p>
-              <br>
-              <p style="color:var(--lime);">[SYSTEM STATUS: OPTIMAL]</p>
+
+          <!-- EQUITY VAULT -->
+          <div class="panel" style="border-color: rgba(204,255,0,0.2);">
+            <div class="panel-header">
+              <div class="panel-title">⬡ Equity Vault</div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div class="today-pill flat" id="today-pill">Today: $0.00</div>
+                <div class="streak-badge none" id="streak-badge">— STREAK</div>
+              </div>
+            </div>
+            <div class="vault-meta" style="margin-bottom:4px;">CURRENT BALANCE</div>
+            <div class="vault-balance" id="vault-current" style="color:var(--lime);text-shadow:0 0 20px var(--lime-glow);">$0.00</div>
+            <div class="vault-roi" id="vault-roi" style="color:var(--muted);">ROI: 0.00% &nbsp;|&nbsp; 0 trades</div>
+            <div class="vault-bar-track">
+              <div class="vault-bar-fill" id="vault-bar" style="width:50%;background:var(--lime);"></div>
+            </div>
+            <div class="vault-row">
+              <div class="vault-meta">Starting Capital: <span id="vault-start-display">Not Set</span></div>
+              <div class="vault-meta">All-time High: <span id="vault-ath" style="color:var(--gold);">—</span></div>
+              <div class="vault-meta">Floating: <span id="vault-float">—</span></div>
+            </div>
+            <div class="vault-input-row">
+              <input class="vault-input" type="number" id="vault-input" placeholder="Set starting balance e.g. 10000" step="0.01">
+              <button class="vault-set-btn" onclick="setBalance()">Set Balance</button>
             </div>
           </div>
+
+          <!-- EQUITY SPARKLINE -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">⟁ Equity Curve — Last 20 Executions</div>
+            </div>
+            <div class="sparkline-wrap" id="sparkline">
+              <div style="color:var(--muted);font-size:11px;letter-spacing:2px;align-self:center;">LOG TRADES TO SEE CURVE</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:10px;color:var(--muted);letter-spacing:1px;">
+              <span>OLDEST</span><span>MOST RECENT →</span>
+            </div>
+          </div>
+
         </div>
+
+        <!-- RIGHT COLUMN -->
         <div>
           <div class="panel">
             <div class="panel-header"><div class="panel-title">Recent Executions</div></div>
             <div id="recentTradesFeed">
               <div style="color:var(--muted);font-size:11px;letter-spacing:2px;text-align:center;padding:24px 0;">NO EXECUTIONS LOGGED</div>
+            </div>
+          </div>
+
+          <!-- QUICK STATS -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">⚡ Quick Intel</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Avg Win</div>
+                <div style="font-weight:700;color:var(--lime);" id="intel-avg-win">$0.00</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Avg Loss</div>
+                <div style="font-weight:700;color:var(--coral);" id="intel-avg-loss">$0.00</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Largest Win</div>
+                <div style="font-weight:700;color:var(--lime);" id="intel-largest-win">$0.00</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Largest Loss</div>
+                <div style="font-weight:700;color:var(--coral);" id="intel-largest-loss">$0.00</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Long Win Rate</div>
+                <div style="font-weight:700;color:var(--cyan);" id="intel-long-wr">—</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Short Win Rate</div>
+                <div style="font-weight:700;color:var(--gold);" id="intel-short-wr">—</div>
+              </div>
             </div>
           </div>
         </div>
@@ -808,11 +913,19 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Net P&amp;L ($)</label>
-        <input type="number" class="form-control" id="edit-pnl" step="0.01">
+        <label class="form-label">Fill Price (In)</label>
+        <input type="number" class="form-control" id="edit-price-in" step="0.00001" placeholder="0.00000">
       </div>
       <div class="form-group">
-        <label class="form-label">Size</label>
+        <label class="form-label">Fill Price (Out)</label>
+        <input type="number" class="form-control" id="edit-price-out" step="0.00001" placeholder="0.00000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Net P&amp;L ($) — Manual Override</label>
+        <input type="number" class="form-control" id="edit-pnl" step="0.01" placeholder="e.g. 450.00 or -120.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lot Size / Contracts</label>
         <input type="number" class="form-control" id="edit-size" step="0.01">
       </div>
       <div class="form-group">
@@ -832,8 +945,18 @@
         </select>
       </div>
       <div class="form-group full">
-        <label class="form-label">Notes</label>
-        <textarea class="form-control" id="edit-notes" style="min-height:100px;"></textarea>
+        <label class="form-label">Psychological State</label>
+        <div class="emotion-grid" id="edit-emotions">
+          <button class="emotion-btn" onclick="this.classList.toggle('selected')">Cold / Locked In</button>
+          <button class="emotion-btn" onclick="this.classList.toggle('selected')">Aggressive</button>
+          <button class="emotion-btn" onclick="this.classList.toggle('selected')">Hesitant</button>
+          <button class="emotion-btn" onclick="this.classList.toggle('selected')">FOMO</button>
+          <button class="emotion-btn" onclick="this.classList.toggle('selected')">Revenge Trading</button>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Thesis & Technical Variables</label>
+        <textarea class="form-control" id="edit-notes" style="min-height:100px;" placeholder="Document structure context, HTF alignment, entry triggers..."></textarea>
       </div>
     </div>
     <div class="form-actions">
@@ -850,6 +973,14 @@
 // ═══════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://vxfnchgtreitmyxvviiz.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Zm5jaGd0cmVpdG15eHZ2aWl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjgxODYsImV4cCI6MjA5MjcwNDE4Nn0.q_UgAcM39h7mNv-bZlQoL0SGfkV8K6iRFp1s2is97Rc';
+
+// ── LOCAL DATE (timezone-safe for all continents) ─────────────
+function localDate() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
@@ -929,7 +1060,7 @@ async function bootApp(user) {
   currentUser = user;
   document.getElementById('app').style.display = 'block';
   document.getElementById('user-email-display').innerText = user.email;
-  document.querySelectorAll('input[type="date"]').forEach(el => el.valueAsDate = new Date());
+  document.querySelectorAll('input[type="date"]').forEach(el => el.value = localDate());
   updateClock();
   setInterval(updateClock, 1000);
   await loadTrades();
@@ -1007,7 +1138,7 @@ async function injectTrade() {
   const priceIn  = parseFloat(document.getElementById('f-in').value);
   const priceOut = parseFloat(document.getElementById('f-out').value);
   const size     = parseFloat(document.getElementById('f-size').value) || 1;
-  const date     = document.getElementById('f-date').value || new Date().toISOString().split('T')[0];
+  const date     = document.getElementById('f-date').value || localDate();
   const setup    = document.getElementById('f-setup').value;
   const notes    = document.getElementById('f-notes').value;
   const manualPnl= parseFloat(document.getElementById('f-pnl').value);
@@ -1056,7 +1187,7 @@ function purgeFields() {
   ['f-asset','f-in','f-out','f-size','f-pnl','f-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-dir').selectedIndex  = 0;
   document.getElementById('f-setup').selectedIndex = 0;
-  document.getElementById('f-date').valueAsDate = new Date();
+  document.getElementById('f-date').value = localDate();
   document.querySelectorAll('.emotion-btn.selected').forEach(b => b.classList.remove('selected'));
   ['preview-pnl','preview-pct','preview-pts'].forEach(id => {
     const el = document.getElementById(id);
