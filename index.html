@@ -509,6 +509,10 @@ textarea.finput { resize:vertical; min-height:100px; line-height:1.65; font-fami
               </div>
             </div>
             <div class="fg full">
+              <label class="flabel">Trade Notes</label>
+              <textarea class="finput" id="f-notes" placeholder="Entry reasoning, what you saw, what went right / wrong, lessons..." style="min-height:90px"></textarea>
+            </div>
+            <div class="fg full">
               <label class="flabel">Trade Screenshot</label>
               <div class="ss-upload-area" id="ss-area" onclick="document.getElementById('ss-input').click()">
                 <input type="file" class="ss-input" id="ss-input" accept="image/*" onchange="handleSS(this)">
@@ -538,11 +542,11 @@ textarea.finput { resize:vertical; min-height:100px; line-height:1.65; font-fami
             <thead>
               <tr>
                 <th>Date</th><th>Pair</th><th>Dir</th><th>Setup</th>
-                <th>Size</th><th>P&L</th><th>SS</th><th></th>
+                <th>Size</th><th>P&L</th><th>Notes</th><th>SS</th><th></th>
               </tr>
             </thead>
             <tbody id="ledgerBody">
-              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;letter-spacing:2px">NO TRADES LOGGED YET</td></tr>
+              <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;letter-spacing:2px">NO TRADES LOGGED YET</td></tr>
             </tbody>
           </table>
         </div>
@@ -584,6 +588,10 @@ textarea.finput { resize:vertical; min-height:100px; line-height:1.65; font-fami
           <button class="emo-btn" onclick="this.classList.toggle('sel')">FOMO</button>
           <button class="emo-btn" onclick="this.classList.toggle('sel')">Revenge Trade</button>
         </div>
+      </div>
+      <div class="fg full">
+        <label class="flabel">Trade Notes</label>
+        <textarea class="finput" id="edit-notes" placeholder="Entry reasoning, what you saw..." style="min-height:90px"></textarea>
       </div>
       <div class="fg full">
         <label class="flabel">Update Screenshot</label>
@@ -701,6 +709,7 @@ async function injectTrade() {
   const setup = document.getElementById('f-setup').value;
   const manualPnl = parseFloat(document.getElementById('f-pnl').value);
   const emotions = [...document.querySelectorAll('#log-emos .emo-btn.sel')].map(b=>b.innerText).join(', ');
+  const notes = document.getElementById('f-notes').value.trim();
 
   if (!asset) { alert('Enter a pair/asset.'); return; }
   let pnl = manualPnl;
@@ -717,7 +726,7 @@ async function injectTrade() {
   const {data,error} = await sb.from('trades').insert({
     user_id: currentUser.id, asset, direction: dir,
     price_in: priceIn||null, price_out: priceOut||null,
-    size, date, setup, pnl, emotions,
+    size, date, setup, pnl, emotions, notes,
     screenshot: pendingScreenshot || null
   }).select().single();
 
@@ -751,7 +760,8 @@ async function saveEdit() {
   if (!asset||isNaN(pnl)) { showInd('edit-ind','Fill pair + P&L.','err'); return; }
   showInd('edit-ind','Saving...','');
 
-  const updateObj = { asset, direction:dir, pnl, size, date, setup, price_in:priceIn, price_out:priceOut, emotions };
+  const notes = document.getElementById('edit-notes').value.trim();
+  const updateObj = { asset, direction:dir, pnl, size, date, setup, notes, price_in:priceIn, price_out:priceOut, emotions };
   if (editScreenshot) updateObj.screenshot = editScreenshot;
 
   const {error} = await sb.from('trades').update(updateObj).eq('id',id).eq('user_id',currentUser.id);
@@ -937,6 +947,7 @@ function refreshLedger() {
       <td class="col-m" style="font-size:12px">${t.setup||'—'}</td>
       <td class="col-m">${t.size||'—'}</td>
       <td class="${t.pnl>=0?'col-g':'col-r'}">${t.pnl>=0?'+':''}$${Math.abs(t.pnl).toFixed(2)}</td>
+      <td style="max-width:180px">${t.notes?`<span style="font-size:11px;color:var(--text2);font-family:var(--fm);white-space:normal;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${t.notes}</span>`:'<span style="color:var(--muted2)">—</span>'}</td>
       <td>${t.screenshot?`<img class="ss-thumb" src="${t.screenshot}" onclick="viewSS('${t.asset}', this.src)" title="View screenshot">`:
         '<span style="color:var(--muted2);font-size:11px">—</span>'}</td>
       <td><button class="btn-edit" onclick="openEditModal('${t.id}')">Edit</button><button class="btn-del" onclick="deleteTrade('${t.id}')">Del</button></td>
@@ -983,7 +994,7 @@ function renderCalendar() {
 
 // ── FORMS ──────────────────────────────────────────
 function purgeFields() {
-  ['f-asset','f-in','f-out','f-size','f-pnl'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['f-asset','f-in','f-out','f-size','f-pnl','f-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('f-dir').selectedIndex=0;
   document.getElementById('f-setup').selectedIndex=0;
   document.getElementById('f-date').value=localDate();
@@ -1030,6 +1041,7 @@ function openEditModal(id) {
   document.getElementById('edit-size').value=t.size||'';
   document.getElementById('edit-date').value=t.date||'';
   document.getElementById('edit-setup').value=t.setup||'';
+  document.getElementById('edit-notes').value=t.notes||'';
   document.getElementById('edit-in').value=t.price_in||'';
   document.getElementById('edit-out').value=t.price_out||'';
   const saved=(t.emotions||'').split(', ').map(s=>s.trim());
