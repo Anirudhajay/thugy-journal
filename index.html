@@ -506,6 +506,14 @@ textarea.finput{resize:vertical;min-height:88px;line-height:1.65;font-family:var
               <input type="number" class="finput" id="f-out" placeholder="0.00000" step="0.00001">
             </div>
             <div class="fg">
+              <label class="flabel">Take Profit Price</label>
+              <input type="number" class="finput" id="f-tp" placeholder="0.00000" step="0.00001">
+            </div>
+            <div class="fg">
+              <label class="flabel">Stop Loss Price</label>
+              <input type="number" class="finput" id="f-sl" placeholder="0.00000" step="0.00001">
+            </div>
+            <div class="fg">
               <label class="flabel">Outcome</label>
               <select class="finput" id="f-outcome">
                 <option value="MANUAL">Manual P&L entry</option>
@@ -605,6 +613,8 @@ textarea.finput{resize:vertical;min-height:88px;line-height:1.65;font-family:var
         <select class="finput" id="e-dir"><option value="LONG">LONG (BUY)</option><option value="SHORT">SHORT (SELL)</option></select></div>
       <div class="fg"><label class="flabel">Entry Price</label><input type="number" class="finput" id="e-in" step="0.00001"></div>
       <div class="fg"><label class="flabel">Exit Price</label><input type="number" class="finput" id="e-out" step="0.00001"></div>
+      <div class="fg"><label class="flabel">Take Profit Price</label><input type="number" class="finput" id="e-tp" step="0.00001" placeholder="0.00000"></div>
+      <div class="fg"><label class="flabel">Stop Loss Price</label><input type="number" class="finput" id="e-sl" step="0.00001" placeholder="0.00000"></div>
       <div class="fg"><label class="flabel">Profit Target ($)</label><input type="number" class="finput" id="e-tp-dollar" placeholder="e.g. 1225.00" step="0.01"></div>
       <div class="fg"><label class="flabel">Risk Amount ($)</label><input type="number" class="finput" id="e-sl-dollar" placeholder="e.g. 500.00" step="0.01"></div>
       <div class="fg"><label class="flabel">Lot Size</label><input type="number" class="finput" id="e-size" step="0.01"></div>
@@ -667,6 +677,8 @@ textarea.finput{resize:vertical;min-height:88px;line-height:1.65;font-family:var
       <div class="dm-stat"><div class="dm-stat-label">Tick Value</div><div class="dm-stat-val" id="dm-tick" style="color:var(--cyan)">—</div></div>
       <div class="dm-stat"><div class="dm-stat-label">Entry</div><div class="dm-stat-val" id="dm-in">—</div></div>
       <div class="dm-stat"><div class="dm-stat-label">Exit</div><div class="dm-stat-val" id="dm-out">—</div></div>
+      <div class="dm-stat"><div class="dm-stat-label">TP Price</div><div class="dm-stat-val" id="dm-tp-price" style="color:var(--lime)">—</div></div>
+      <div class="dm-stat"><div class="dm-stat-label">SL Price</div><div class="dm-stat-val" id="dm-sl-price" style="color:var(--coral)">—</div></div>
       <div class="dm-stat"><div class="dm-stat-label">Target $</div><div class="dm-stat-val" id="dm-tp" style="color:var(--lime)">—</div></div>
       <div class="dm-stat"><div class="dm-stat-label">Risk $</div><div class="dm-stat-val" id="dm-sl" style="color:var(--coral)">—</div></div>
     </div>
@@ -782,7 +794,8 @@ async function injectTrade(){
   const tpDollar=parseFloat(document.getElementById('f-tp-dollar').value);
   const slDollar=parseFloat(document.getElementById('f-sl-dollar').value);
   const size=parseFloat(document.getElementById('f-size').value)||null;
-  const tp=null; const sl=null; // price fields removed — using $ amounts
+  const tp=parseFloat(document.getElementById('f-tp').value)||null;
+  const sl=parseFloat(document.getElementById('f-sl').value)||null;
   const outcome=document.getElementById('f-outcome').value;
   const date=document.getElementById('f-date').value||ld();
   const rawSetup=document.getElementById('f-setup').value;
@@ -823,7 +836,7 @@ async function injectTrade(){
   const{data,error}=await sb.from('trades').insert({
     user_id:currentUser.id,asset,direction:dir,
     price_in:priceIn||null,price_out:priceOut||null,
-    tp_dollar:tpDollar||null,sl_dollar:slDollar||null,
+    tp:tp||null,sl:sl||null,tp_dollar:tpDollar||null,sl_dollar:slDollar||null,
     size,date,setup,pnl,
     notes,emotions,screenshot:pendingSS||null,
     outcome,rr:rr||null,tick_value:null
@@ -870,7 +883,7 @@ async function saveEdit(){
   }
 
   ind('e-ind','Saving...','');
-  const upd={asset,direction:dir,pnl,size,date,setup,notes,price_in:priceIn,price_out:priceOut,tp_dollar:tpDollar,sl_dollar:slDollar,emotions,rr};
+  const upd={asset,direction:dir,pnl,size,date,setup,notes,price_in:priceIn,price_out:priceOut,tp:parseFloat(document.getElementById('e-tp').value)||null,sl:parseFloat(document.getElementById('e-sl').value)||null,tp_dollar:tpDollar,sl_dollar:slDollar,emotions,rr};
   if(editSS)upd.screenshot=editSS;
 
   const{error}=await sb.from('trades').update(upd).eq('id',id).eq('user_id',currentUser.id);
@@ -1102,6 +1115,8 @@ function openDetail(id){
   document.getElementById('dm-tick').innerText=t.tick_value?'$'+t.tick_value+'/pip':'—';
   document.getElementById('dm-in').innerText=t.price_in||'—';
   document.getElementById('dm-out').innerText=t.price_out||'—';
+  document.getElementById('dm-tp-price').innerText=t.tp||'—';
+  document.getElementById('dm-sl-price').innerText=t.sl||'—';
   document.getElementById('dm-tp').innerText=t.tp_dollar?'$'+parseFloat(t.tp_dollar).toFixed(2):'—';
   document.getElementById('dm-sl').innerText=t.sl_dollar?'$'+parseFloat(t.sl_dollar).toFixed(2):'—';
 
@@ -1151,6 +1166,8 @@ function openEdit(id){
   }
   document.getElementById('e-in').value=t.price_in||'';
   document.getElementById('e-out').value=t.price_out||'';
+  document.getElementById('e-tp').value=t.tp||'';
+  document.getElementById('e-sl').value=t.sl||'';
   document.getElementById('e-tp-dollar').value=t.tp_dollar||'';
   document.getElementById('e-sl-dollar').value=t.sl_dollar||'';
   document.getElementById('e-notes').value=t.notes||'';
@@ -1166,7 +1183,7 @@ function closeEdit(){document.getElementById('editModal').classList.remove('open
 
 // ─── PURGE FORM ──────────────────────────────────────
 function purgeFields(){
-  ['f-asset','f-in','f-out','f-tp-dollar','f-sl-dollar','f-size','f-pnl','f-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); document.getElementById('calc-rr').innerText='—'; document.getElementById('calc-rr').style.color='var(--muted)';
+  ['f-asset','f-in','f-out','f-tp','f-sl','f-tp-dollar','f-sl-dollar','f-size','f-pnl','f-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); document.getElementById('calc-rr').innerText='—'; document.getElementById('calc-rr').style.color='var(--muted)';
   ['f-dir','f-setup','f-outcome'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
   document.getElementById('f-custom-setup').style.display='none';
   document.getElementById('f-custom-setup').value='';
@@ -1226,7 +1243,7 @@ function calcPreview(){
   }
 }
 
-['f-in','f-out','f-tp-dollar','f-sl-dollar','f-size','f-dir','f-pnl','f-outcome'].forEach(id=>{
+['f-in','f-out','f-tp','f-sl','f-tp-dollar','f-sl-dollar','f-size','f-dir','f-pnl','f-outcome'].forEach(id=>{
   document.getElementById(id)?.addEventListener('input', calcPreview);
   document.getElementById(id)?.addEventListener('change', calcPreview);
 });
