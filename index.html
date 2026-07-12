@@ -611,13 +611,16 @@ textarea.finput{resize:vertical;min-height:88px;line-height:1.65;font-family:var
       <div class="fg"><label class="flabel">Net P&L ($)</label><input type="number" class="finput" id="e-pnl" step="0.01"></div>
       <div class="fg"><label class="flabel">Date</label><input type="date" class="finput" id="e-date"></div>
       <div class="fg"><label class="flabel">Setup</label>
-        <select class="finput" id="e-setup">
+        <select class="finput" id="e-setup" onchange="toggleCustomSetup('e-custom-setup',this.value)">
           <option value="">—</option>
           <option>Break of Structure (BOS)</option><option>Change of Character (CHoCH)</option>
           <option>Fair Value Gap (FVG)</option><option>Order Block (OB)</option>
           <option>Liquidity Sweep</option><option>Supply / Demand Zone</option>
           <option>Range Breakout</option><option>News / Macro</option>
-        </select></div>
+          <option value="CUSTOM">＋ Custom Setup...</option>
+        </select>
+        <input type="text" class="finput" id="e-custom-setup" placeholder="Type your setup name..." style="display:none;margin-top:8px">
+      </div>
       <div class="fg full"><label class="flabel">Psychological State</label>
         <div class="emo-grid" id="e-emos">
           <button class="emo-btn" onclick="this.classList.toggle('sel')">Cold / Locked In</button>
@@ -781,7 +784,8 @@ async function injectTrade(){
   const size=parseFloat(document.getElementById('f-size').value)||null;
   const outcome=document.getElementById('f-outcome').value;
   const date=document.getElementById('f-date').value||ld();
-  const setup=document.getElementById('f-setup').value;
+  const rawSetup=document.getElementById('f-setup').value;
+  const setup=rawSetup==='CUSTOM'?(document.getElementById('f-custom-setup').value.trim()||'Custom'):rawSetup;
   const notes=document.getElementById('f-notes').value.trim();
   const manualPnl=parseFloat(document.getElementById('f-pnl').value);
   const emotions=[...document.querySelectorAll('#log-emos .emo-btn.sel')].map(b=>b.innerText).join(', ');
@@ -806,12 +810,12 @@ async function injectTrade(){
     } else {alert('Enter P&L manually, or fill Entry + Exit + Lot Size, or select TP/SL outcome.');return;}
   }
 
-  // R:R
+  // R:R — Reward / Risk (direction-aware)
   let rr=null;
   if(!isNaN(priceIn)&&!isNaN(tp)&&!isNaN(sl)&&sl!==priceIn){
-    const reward=Math.abs(tp-priceIn);
-    const risk=Math.abs(sl-priceIn);
-    rr=reward/risk;
+    const reward = dir==='LONG' ? tp - priceIn : priceIn - tp;
+    const risk   = dir==='LONG' ? priceIn - sl : sl - priceIn;
+    if(risk>0 && reward>0) rr = reward/risk;
   }
 
   // Tick value per pip
@@ -857,7 +861,8 @@ async function saveEdit(){
   const dir=document.getElementById('e-dir').value;
   const size=parseFloat(document.getElementById('e-size').value)||null;
   const date=document.getElementById('e-date').value;
-  const setup=document.getElementById('e-setup').value;
+  const rawSetup=document.getElementById('e-setup').value;
+  const setup=rawSetup==='CUSTOM'?(document.getElementById('e-custom-setup').value.trim()||'Custom'):rawSetup;
   const priceIn=parseFloat(document.getElementById('e-in').value)||null;
   const priceOut=parseFloat(document.getElementById('e-out').value)||null;
   const tp=parseFloat(document.getElementById('e-tp').value)||null;
@@ -868,7 +873,11 @@ async function saveEdit(){
   if(!asset||isNaN(pnl)){ind('e-ind','Fill pair + P&L.','err');return;}
 
   let rr=null;
-  if(priceIn&&tp&&sl&&sl!==priceIn){rr=parseFloat((Math.abs(tp-priceIn)/Math.abs(sl-priceIn)).toFixed(2));}
+  if(priceIn&&tp&&sl&&sl!==priceIn){
+    const reward = dir==='LONG' ? tp-priceIn : priceIn-tp;
+    const risk   = dir==='LONG' ? priceIn-sl : sl-priceIn;
+    if(risk>0&&reward>0) rr=parseFloat((reward/risk).toFixed(2));
+  }
 
   ind('e-ind','Saving...','');
   const upd={asset,direction:dir,pnl,size,date,setup,notes,price_in:priceIn,price_out:priceOut,tp,sl,emotions,rr};
@@ -1138,7 +1147,17 @@ function openEdit(id){
   document.getElementById('e-pnl').value=t.pnl||'';
   document.getElementById('e-size').value=t.size||'';
   document.getElementById('e-date').value=t.date||'';
-  document.getElementById('e-setup').value=t.setup||'';
+  // Handle custom setups in edit modal
+  const knownSetups=['Break of Structure (BOS)','Change of Character (CHoCH)','Fair Value Gap (FVG)',
+    'Order Block (OB)','Liquidity Sweep','Supply / Demand Zone','Range Breakout','News / Macro',''];
+  if(t.setup && !knownSetups.includes(t.setup)){
+    document.getElementById('e-setup').value='CUSTOM';
+    document.getElementById('e-custom-setup').value=t.setup;
+    document.getElementById('e-custom-setup').style.display='block';
+  } else {
+    document.getElementById('e-setup').value=t.setup||'';
+    document.getElementById('e-custom-setup').style.display='none';
+  }
   document.getElementById('e-in').value=t.price_in||'';
   document.getElementById('e-out').value=t.price_out||'';
   document.getElementById('e-tp').value=t.tp||'';
@@ -1158,6 +1177,8 @@ function closeEdit(){document.getElementById('editModal').classList.remove('open
 function purgeFields(){
   ['f-asset','f-in','f-out','f-tp','f-sl','f-size','f-pnl','f-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['f-dir','f-setup','f-outcome'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
+  document.getElementById('f-custom-setup').style.display='none';
+  document.getElementById('f-custom-setup').value='';
   document.getElementById('f-date').value=ld();
   document.querySelectorAll('#log-emos .emo-btn.sel').forEach(b=>b.classList.remove('sel'));
   pendingSS=null;
@@ -1195,17 +1216,22 @@ function calcPreview(){
     if(startBal){const pct=document.getElementById('prev-pct');pct.innerText=(pnl/startBal*100).toFixed(2)+'%';pct.style.color=pnl>=0?'var(--lime)':'var(--coral)';}
   }
 
-  // R:R
+  // R:R (direction-aware)
+  const dir2=document.getElementById('f-dir').value;
   if(!isNaN(pin)&&!isNaN(tp)&&!isNaN(sl)&&sl!==pin){
-    const rr=Math.abs(tp-pin)/Math.abs(sl-pin);
-    const rre=document.getElementById('prev-rr');
-    rre.innerText='1 : '+rr.toFixed(2)+'R';
-    rre.style.color='var(--gold)';
+    const reward2 = dir2==='LONG' ? tp-pin : pin-tp;
+    const risk2   = dir2==='LONG' ? pin-sl  : sl-pin;
+    if(risk2>0&&reward2>0){
+      const rr=reward2/risk2;
+      const rre=document.getElementById('prev-rr');
+      rre.innerText='1 : '+rr.toFixed(2);
+      rre.style.color=rr>=2?'var(--lime)':rr>=1?'var(--gold)':'var(--coral)';
+    }
     // Risk $
-    if(size){
-      const risk=Math.abs(sl-pin)*size*100000*0.0001;
+    if(size&&risk2>0){
+      const riskDollar=risk2*size*100000*0.0001;
       const re=document.getElementById('prev-risk');
-      re.innerText='$'+risk.toFixed(2);
+      re.innerText='$'+riskDollar.toFixed(2);
       re.style.color='var(--coral)';
     }
   }
