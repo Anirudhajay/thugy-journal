@@ -608,29 +608,54 @@ textarea.finput{resize:vertical;min-height:88px;line-height:1.65;font-family:var
     <div class="modal-title">Edit Execution</div>
     <input type="hidden" id="e-id">
     <div class="form-grid" style="margin-bottom:16px">
+
+      <!-- Row 1: Pair + Direction -->
       <div class="fg"><label class="flabel">Pair / Asset</label><input type="text" class="finput" id="e-asset" style="text-transform:uppercase"></div>
       <div class="fg"><label class="flabel">Direction</label>
         <select class="finput" id="e-dir"><option value="LONG">LONG (BUY)</option><option value="SHORT">SHORT (SELL)</option></select></div>
-      <div class="fg"><label class="flabel">Entry Price</label><input type="number" class="finput" id="e-in" step="0.00001"></div>
-      <div class="fg"><label class="flabel">Exit Price</label><input type="number" class="finput" id="e-out" step="0.00001"></div>
+
+      <!-- Row 2: Entry + Exit -->
+      <div class="fg"><label class="flabel">Entry Price</label><input type="number" class="finput" id="e-in" step="0.00001" placeholder="0.00000"></div>
+      <div class="fg"><label class="flabel">Exit Price</label><input type="number" class="finput" id="e-out" step="0.00001" placeholder="0.00000"></div>
+
+      <!-- Row 3: TP Price + SL Price -->
       <div class="fg"><label class="flabel">Take Profit Price</label><input type="number" class="finput" id="e-tp" step="0.00001" placeholder="0.00000"></div>
       <div class="fg"><label class="flabel">Stop Loss Price</label><input type="number" class="finput" id="e-sl" step="0.00001" placeholder="0.00000"></div>
+
+      <!-- Row 4: Profit Target $ + Risk Amount $ -->
       <div class="fg"><label class="flabel">Profit Target ($)</label><input type="number" class="finput" id="e-tp-dollar" placeholder="e.g. 1225.00" step="0.01"></div>
       <div class="fg"><label class="flabel">Risk Amount ($)</label><input type="number" class="finput" id="e-sl-dollar" placeholder="e.g. 500.00" step="0.01"></div>
-      <div class="fg"><label class="flabel">Lot Size</label><input type="number" class="finput" id="e-size" step="0.01"></div>
-      <div class="fg"><label class="flabel">Net P&L ($)</label><input type="number" class="finput" id="e-pnl" step="0.01"></div>
+
+      <!-- Row 5: Lot Size + Outcome -->
+      <div class="fg"><label class="flabel">Lot Size</label><input type="number" class="finput" id="e-size" step="0.01" placeholder="0.10"></div>
+      <div class="fg"><label class="flabel">Outcome</label>
+        <select class="finput" id="e-outcome">
+          <option value="MANUAL">Manual P&L entry</option>
+          <option value="TP">TP Hit ✓</option>
+          <option value="SL">SL Hit ✗</option>
+          <option value="BE">Breakeven</option>
+        </select></div>
+
+      <!-- Row 6: Net P&L + Date -->
+      <div class="fg"><label class="flabel">Net P&L ($)</label><input type="number" class="finput" id="e-pnl" step="0.01" placeholder="e.g. 1225.00 or -500.00"></div>
       <div class="fg"><label class="flabel">Date</label><input type="date" class="finput" id="e-date"></div>
-      <div class="fg"><label class="flabel">Setup</label>
-        <select class="finput" id="e-setup" onchange="toggleCustomSetup('e-custom-setup',this.value)">
-          <option value="">—</option>
-          <option>Break of Structure (BOS)</option><option>Change of Character (CHoCH)</option>
-          <option>Fair Value Gap (FVG)</option><option>Order Block (OB)</option>
-          <option>Liquidity Sweep</option><option>Supply / Demand Zone</option>
-          <option>Range Breakout</option><option>News / Macro</option>
-          <option value="CUSTOM">＋ Custom Setup...</option>
-        </select>
-        <input type="text" class="finput" id="e-custom-setup" placeholder="Type your setup name..." style="display:none;margin-top:8px">
+
+      <!-- Row 7: Setup full width -->
+      <div class="fg full"><label class="flabel">Setup</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <select class="finput" id="e-setup" onchange="toggleCustomSetup('e-custom-setup',this.value)">
+            <option value="">—</option>
+            <option>Break of Structure (BOS)</option><option>Change of Character (CHoCH)</option>
+            <option>Fair Value Gap (FVG)</option><option>Order Block (OB)</option>
+            <option>Liquidity Sweep</option><option>Supply / Demand Zone</option>
+            <option>Range Breakout</option><option>News / Macro</option>
+            <option value="CUSTOM">＋ Custom Setup...</option>
+          </select>
+          <input type="text" class="finput" id="e-custom-setup" placeholder="Type your setup name..." style="display:none">
+        </div>
       </div>
+
+      <!-- Emotions -->
       <div class="fg full"><label class="flabel">Psychological State</label>
         <div class="emo-grid" id="e-emos">
           <button class="emo-btn" onclick="this.classList.toggle('sel')">Cold / Locked In</button>
@@ -640,9 +665,13 @@ textarea.finput{resize:vertical;min-height:88px;line-height:1.65;font-family:var
           <button class="emo-btn" onclick="this.classList.toggle('sel')">FOMO</button>
           <button class="emo-btn" onclick="this.classList.toggle('sel')">Revenge Trade</button>
         </div></div>
+
+      <!-- Notes -->
       <div class="fg full"><label class="flabel">Trade Notes</label>
         <textarea class="finput" id="e-notes" style="min-height:80px"></textarea></div>
-      <div class="fg full"><label class="flabel">Update Screenshot</label>
+
+      <!-- Screenshot -->
+      <div class="fg full"><label class="flabel">Screenshot</label>
         <div class="ss-area" id="e-ss-area" onclick="document.getElementById('e-ss-input').click()">
           <input type="file" class="ss-input" id="e-ss-input" accept="image/*" onchange="handleEditSS(this)">
           <div class="ss-label" id="e-ss-label">📷 &nbsp; Click to replace screenshot</div>
@@ -883,7 +912,8 @@ async function saveEdit(){
   }
 
   ind('e-ind','Saving...','');
-  const upd={asset,direction:dir,pnl,size,date,setup,notes,price_in:priceIn,price_out:priceOut,tp:parseFloat(document.getElementById('e-tp').value)||null,sl:parseFloat(document.getElementById('e-sl').value)||null,tp_dollar:tpDollar,sl_dollar:slDollar,emotions,rr};
+  const eOutcome=document.getElementById('e-outcome').value;
+  const upd={asset,direction:dir,pnl,size,date,setup,notes,price_in:priceIn,price_out:priceOut,tp:parseFloat(document.getElementById('e-tp').value)||null,sl:parseFloat(document.getElementById('e-sl').value)||null,tp_dollar:tpDollar,sl_dollar:slDollar,emotions,rr,outcome:eOutcome};
   if(editSS)upd.screenshot=editSS;
 
   const{error}=await sb.from('trades').update(upd).eq('id',id).eq('user_id',currentUser.id);
@@ -1170,6 +1200,7 @@ function openEdit(id){
   document.getElementById('e-sl').value=t.sl||'';
   document.getElementById('e-tp-dollar').value=t.tp_dollar||'';
   document.getElementById('e-sl-dollar').value=t.sl_dollar||'';
+  document.getElementById('e-outcome').value=t.outcome||'MANUAL';
   document.getElementById('e-notes').value=t.notes||'';
   const saved=(t.emotions||'').split(', ').map(s=>s.trim());
   document.querySelectorAll('#e-emos .emo-btn').forEach(btn=>btn.classList.toggle('sel',saved.includes(btn.innerText)));
